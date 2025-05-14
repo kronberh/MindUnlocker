@@ -29,7 +29,7 @@ fun generateEquation(settings: EquationSettings): Equation {
     val displayedResult = if (isCorrect) {
         actualResult
     } else {
-        val deviation = 1f / 10f.pow(settings.maxDecimals.coerceAtLeast(1))
+        val deviation = (Random.nextInt() % 3 + 1) / 10f.pow(settings.maxDecimals)
         actualResult + listOf(-deviation, deviation).random()
     }
 
