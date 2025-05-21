@@ -4,8 +4,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.viewmodel.compose.viewModel
+import ua.onpu.mindunlocker.data.EquationSettings
+import ua.onpu.mindunlocker.enums.Topic
 import ua.onpu.mindunlocker.global.LockState
 import ua.onpu.mindunlocker.screens.MathLockScreen
 import ua.onpu.mindunlocker.viewmodels.EquationSettingsViewModel
@@ -17,11 +18,13 @@ class LockActivity : ComponentActivity() {
 
         setContent {
             val settingsViewModel: EquationSettingsViewModel = viewModel()
-            val settings = settingsViewModel.settings.collectAsState().value
+
+            val randomTopic = settingsViewModel.enabledTopics.randomOrNull() ?: Topic.ALGEBRA
 
             MaterialTheme {
                 MathLockScreen(
-                    settings = settings,
+                    topic = randomTopic,
+                    settings = settingsViewModel.settingsMap[randomTopic] ?: EquationSettings(allowedOperations = setOf('+', '-')),
                     onUnlock = {
                         LockState.lastUnlockedPackage = packageNameToUnlock
                         finish()

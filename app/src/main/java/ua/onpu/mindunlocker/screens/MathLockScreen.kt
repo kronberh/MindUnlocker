@@ -21,9 +21,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import ua.onpu.mindunlocker.data.EquationSettings
 import ua.onpu.mindunlocker.data.generateEquation
+import ua.onpu.mindunlocker.enums.Topic
 
 @Composable
-fun MathLockScreen(settings: EquationSettings, onUnlock: () -> Unit) {
+fun MathLockScreen(topic: Topic, settings: EquationSettings, onUnlock: () -> Unit) {
     var currentEquation by remember { mutableStateOf(generateEquation(settings)) }
     var isCorrectAnswer by remember { mutableStateOf(currentEquation.answer) }
 
@@ -32,6 +33,11 @@ fun MathLockScreen(settings: EquationSettings, onUnlock: () -> Unit) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Text(
+            text = "Topic: " + topic.displayName,
+            style = MaterialTheme.typography.headlineLarge
+        )
+        Spacer(modifier = Modifier.height(24.dp))
         Text(
             text = currentEquation.text,
             style = MaterialTheme.typography.headlineLarge

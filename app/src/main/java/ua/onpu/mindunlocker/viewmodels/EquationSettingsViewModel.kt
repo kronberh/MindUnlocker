@@ -2,45 +2,64 @@ package ua.onpu.mindunlocker.viewmodels
 
 import android.app.Application
 import android.content.Context
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
 import ua.onpu.mindunlocker.data.EquationSettings
+import ua.onpu.mindunlocker.enums.Topic
 
 class EquationSettingsViewModel(application: Application) : AndroidViewModel(application) {
-    private val prefs = application.getSharedPreferences("equation_settings", Context.MODE_PRIVATE)
+    private val prefs = application.getSharedPreferences("eq_settings", Context.MODE_PRIVATE)
 
-    private val _settings = MutableStateFlow(
-        EquationSettings(
-            minNumber = prefs.getFloat("minNumber", 1f),
-            maxNumber = prefs.getFloat("maxNumber", 20f),
-            maxDecimals = prefs.getInt("maxDecimals", 0),
-            allowedOperations = prefs.getString("allowedOps", "+-*/")!!.toSet()
+    private val _settingsMap = mutableStateMapOf<Topic, EquationSettings>()
+    val settingsMap: Map<Topic, EquationSettings> = _settingsMap
+
+    private val _enabledTopics = mutableStateListOf<Topic>()
+    val enabledTopics: List<Topic> = _enabledTopics
+
+    init {
+        Topic.entries.forEach { topic ->
+            _settingsMap[topic] = loadSettingsForTopic(topic)
+        }
+        val saved = prefs.getStringSet("enabled_topics", null)
+        if (saved != null) {
+            _enabledTopics.addAll(saved.mapNotNull { name -> Topic.entries.find { it.name == name } })
+        }
+    }
+
+    fun toggleTopicEnabled(topic: Topic) {
+        if (_enabledTopics.contains(topic)) {
+            _enabledTopics.remove(topic)
+        } else {
+            _enabledTopics.add(topic)
+        }
+        prefs.edit()
+            .putStringSet("enabled_topics", _enabledTopics.map { it.name }.toSet())
+            .apply()
+    }
+
+    private fun loadSettingsForTopic(topic: Topic): EquationSettings {
+        val key = topic.name
+        return EquationSettings(
+            minNumber = prefs.getFloat("${key}_min", 1f),
+            maxNumber = prefs.getFloat("${key}_max", 10f),
+            maxDecimals = prefs.getInt("${key}_decimals", 0),
+            allowedOperations = prefs.getStringSet("${key}_ops", topic.defaultOperations.map { it.toString() }.toSet())
+                ?.mapNotNull { it.firstOrNull() }?.toSet() ?: topic.defaultOperations
         )
-    )
-    val settings: StateFlow<EquationSettings> = _settings
-
-    fun updateMin(value: Float) {
-        _settings.value = _settings.value.copy(minNumber = value)
-        prefs.edit().putFloat("minNumber", value).apply()
     }
 
-    fun updateMax(value: Float) {
-        _settings.value = _settings.value.copy(maxNumber = value)
-        prefs.edit().putFloat("maxNumber", value).apply()
+    fun updateSettings(topic: Topic, newSettings: EquationSettings) {
+        _settingsMap[topic] = newSettings
+        saveSettings(topic, newSettings)
     }
 
-    fun updateDecimals(value: Int) {
-        _settings.value = _settings.value.copy(maxDecimals = value)
-        prefs.edit().putInt("maxDecimals", value).apply()
-    }
-
-    fun toggleOperation(op: Char) {
-        val currentOps = _settings.value.allowedOperations.toMutableSet()
-        if (currentOps.contains(op)) currentOps.remove(op) else currentOps.add(op)
-        _settings.value = _settings.value.copy(allowedOperations = currentOps)
-        prefs.edit().putString("allowedOps", currentOps.joinToString("")).apply()
+    private fun saveSettings(topic: Topic, settings: EquationSettings) {
+        prefs.edit()
+            .putFloat("${topic.name}_min", settings.minNumber)
+            .putFloat("${topic.name}_max", settings.maxNumber)
+            .putInt("${topic.name}_decimals", settings.maxDecimals)
+            .putStringSet("${topic.name}_ops", settings.allowedOperations.map { it.toString() }.toSet())
+            .apply()
     }
 }
