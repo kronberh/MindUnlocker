@@ -103,7 +103,11 @@ fun TopicDetailScreen(topic: Topic, viewModel: EquationSettingsViewModel) {
 
         Text(text = "Allowed Operations:")
 
-        val allOps = listOf('+', '-', '*', '/')
+        val allOps = when (topic.name) {
+            "GEOMETRY" -> listOf('◺', '▭')
+            else -> listOf('+', '-', '*', '/')
+        }
+
         Row {
             allOps.forEach { op ->
                 val selected = allowedOperations.contains(op)
